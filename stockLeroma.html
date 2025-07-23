@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stock de Leroma</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    #titulo-principal {
+      font-size: 42px;
+      color: #222;
+      margin-bottom: 30px;
+      text-align: center;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    input[type='text'] {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 250px;
+      margin-right: 10px;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #items {
+      width: 100%;
+      max-width: 500px;
+      margin-top: 30px;
+      flex: 1;
+    }
+
+    .item {
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item input[type='text'] {
+      font-size: 18px;
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .counter button {
+      font-size: 20px;
+      padding: 8px 14px;
+      background-color: #28a745;
+    }
+
+    .counter button:hover {
+      background-color: #218838;
+    }
+
+    .counter span {
+      font-size: 24px;
+      font-weight: bold;
+      width: 40px;
+      text-align: center;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+    }
+
+    .delete-btn:hover {
+      background-color: #b52a37;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 20px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    footer img {
+      height: 60px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="titulo-principal">STOCK DE LEROMA</h1>
+  </header>
+
+  <h2>Crear Ítems</h2>
+  <div>
+    <input type="text" id="item-name" placeholder="Nombre del ítem" />
+    <button onclick="agregarItem()">Agregar</button>
+  </div>
+
+  <div id="items"></div>
+
+  <footer>
+    <span> Desarrollado por Colbac</span>
+    <img src="logoColor.png" alt="Logo de Colbac" />
+  </footer>
+
+  <script>
+    let items = [];
+
+    window.onload = function () {
+      const datos = localStorage.getItem('items');
+      if (datos) {
+        items = JSON.parse(datos);
+        renderizarItems();
+      }
+      // Registrar service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker
+          .register('sw.js')
+          .then(() => console.log('Service Worker registrado'))
+          .catch((err) => console.error('Error registrando SW:', err));
+      }
+    };
+
+    function guardarEnLocalStorage() {
+      localStorage.setItem('items', JSON.stringify(items));
+    }
+
+    function agregarItem() {
+      const nombre = document.getElementById('item-name').value.trim();
+      if (!nombre) return alert('Escribí un nombre válido');
+
+      items.push({ id: Date.now(), nombre, cantidad: 1 });
+      guardarEnLocalStorage();
+      renderizarItems();
+      document.getElementById('item-name').value = '';
+    }
+
+    function renderizarItems() {
+      const contenedor = document.getElementById('items');
+      contenedor.innerHTML = '';
+
+      items.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+
+        const nombreInput = document.createElement('input');
+        nombreInput.type = 'text';
+        nombreInput.value = item.nombre;
+        nombreInput.onchange = (e) => {
+          item.nombre = e.target.value;
+          guardarEnLocalStorage();
+        };
+
+        const cantidadSpan = document.createElement('span');
+        cantidadSpan.textContent = item.cantidad;
+
+        const btnMenos = document.createElement('button');
+        btnMenos.textContent = '-';
+        btnMenos.onclick = () => {
+          if (item.cantidad > 0) {
+            item.cantidad--;
+            guardarEnLocalStorage();
+            renderizarItems();
+          }
+        };
+
+        const btnMas = document.createElement('button');
+        btnMas.textContent = '+';
+        btnMas.onclick = () => {
+          item.cantidad++;
+          guardarEnLocalStorage();
+          renderizarItems();
+        };
+
+        const btnEliminar = document.createElement('button');
+        btnEliminar.textContent = '🗑️ Eliminar';
+        btnEliminar.className = 'delete-btn';
+        btnEliminar.onclick = () => {
+          items = items.filter((i) => i.id !== item.id);
+          guardarEnLocalStorage();
+          renderizarItems();
+        };
+
+        const controls = document.createElement('div');
+        controls.className = 'controls';
+
+        const counter = document.createElement('div');
+        counter.className = 'counter';
+        counter.appendChild(btnMenos);
+        counter.appendChild(cantidadSpan);
+        counter.appendChild(btnMas);
+
+        controls.appendChild(counter);
+        controls.appendChild(btnEliminar);
+
+        div.appendChild(nombreInput);
+        div.appendChild(controls);
+
+        contenedor.appendChild(div);
+      });
+    }
+  </script>
+
+  <!-- Manifest JSON -->
+  <script type="application/json" id="manifest">
+    {
+      "name": "Stock de Leroma",
+      "short_name": "StockLeroma",
+      "start_url": ".",
+      "display": "standalone",
+      "background_color": "#f4f4f4",
+      "theme_color": "#007bff",
+      "description": "Gestor simple de stock para Leroma",
+      "icons": [
+        {
+          "src": "logoColor.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": "logoColor.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    }
+  </script>
+</body>
+</html>
